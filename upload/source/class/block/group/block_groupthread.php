@@ -4,14 +4,14 @@
  *      [Discuz!] (C)2001-2099 Comsenz Inc.
  *      This is NOT a freeware, use is subject to license terms
  *
- *      $Id: block_groupthread.php 11780 2010-06-13 02:11:52Z xupeng $
+ *      $Id: block_groupthread.php 29437 2012-04-12 05:24:35Z zhangguosheng $
  */
 
 if(!defined('IN_DISCUZ')) {
 	exit('Access Denied');
 }
 
-class block_groupthread {
+class block_groupthread extends discuz_block {
 	var $setting = array();
 	function block_groupthread(){
 		$this->setting = array(
@@ -37,6 +37,24 @@ class block_groupthread {
 				'title' => 'groupthread_uids',
 				'type' => 'text'
 			),
+			'digest' => array(
+				'title' => 'groupthread_digest',
+				'type' => 'mcheckbox',
+				'value' => array(
+					array(1, 'groupthread_digest_1'),
+					array(2, 'groupthread_digest_2'),
+					array(3, 'groupthread_digest_3'),
+					array(0, 'groupthread_digest_0')
+				),
+			),
+			'stick' => array(
+				'title' => 'groupthread_stick',
+				'type' => 'mcheckbox',
+				'value' => array(
+					array(1, 'groupthread_stick_1'),
+					array(0, 'groupthread_stick_0')
+				),
+			),
 			'special' => array(
 				'title' => 'groupthread_special',
 				'type' => 'mcheckbox',
@@ -47,8 +65,7 @@ class block_groupthread {
 					array(4, 'groupthread_special_4'),
 					array(5, 'groupthread_special_5'),
 					array(0, 'groupthread_special_0'),
-				),
-				'default' => array('0')
+				)
 			),
 			'rewardstatus' => array(
 				'title' => 'groupthread_special_reward',
@@ -145,6 +162,7 @@ class block_groupthread {
 
 	function fields() {
 		return array(
+				'id' => array('name' => lang('blockclass', 'blockclass_field_id'), 'formtype' => 'text', 'datatype' => 'int'),
 				'url' => array('name' => lang('blockclass', 'blockclass_groupthread_field_url'), 'formtype' => 'text', 'datatype' => 'string'),
 				'title' => array('name' => lang('blockclass', 'blockclass_groupthread_field_title'), 'formtype' => 'title', 'datatype' => 'title'),
 				'pic' => array('name' => lang('blockclass', 'blockclass_groupthread_field_pic'), 'formtype' => 'pic', 'datatype' => 'pic'),
@@ -209,10 +227,6 @@ class block_groupthread {
 		return $settings;
 	}
 
-	function cookparameter($parameter) {
-		return $parameter;
-	}
-
 	function getdata($style, $parameter) {
 		global $_G;
 
@@ -221,7 +235,7 @@ class block_groupthread {
 		loadcache('grouptype');
 		$typeids = array();
 		if(!empty($parameter['gtids'])) {
-			if($parameter['gtids'][0] == '0') {
+			if(isset($parameter['gtids'][0]) && $parameter['gtids'][0] == '0') {
 				unset($parameter['gtids'][0]);
 			}
 			$typeids = $parameter['gtids'];
@@ -232,6 +246,8 @@ class block_groupthread {
 		$keyword	= !empty($parameter['keyword']) ? $parameter['keyword'] : '';
 		$startrow	= isset($parameter['startrow']) ? intval($parameter['startrow']) : 0;
 		$items		= isset($parameter['items']) ? intval($parameter['items']) : 10;
+		$digest		= isset($parameter['digest']) ? $parameter['digest'] : 0;
+		$stick		= isset($parameter['stick']) ? $parameter['stick'] : 0;
 		$special	= isset($parameter['special']) ? $parameter['special'] : array();
 		$lastpost	= isset($parameter['lastpost']) ? intval($parameter['lastpost']) : 0;
 		$postdateline	= isset($parameter['postdateline']) ? intval($parameter['postdateline']) : 0;
@@ -272,6 +288,8 @@ class block_groupthread {
 			.($uids ? ' AND t.authorid IN ('.dimplode($uids).')' : '')
 			.($special ? ' AND t.special IN ('.dimplode($special).')' : '')
 			.((in_array(3, $special) && $rewardstatus) ? ($rewardstatus == 1 ? ' AND t.price < 0' : ' AND t.price > 0') : '')
+			.($digest ? ' AND t.digest IN ('.dimplode($digest).')' : '')
+			.($stick ? ' AND t.displayorder IN ('.dimplode($stick).')' : '')
 			.$keyword;
 
 		if(empty($fids)) {
@@ -291,12 +309,15 @@ class block_groupthread {
 		if($orderby == 'heats') {
 			$sql .= " AND t.heats>'0'";
 		}
+		$sqlfrom = $sqlfield = $joinmethodpic = '';
 
-		$sqlfield = '';
-		$sqlfrom = "FROM `".DB::table('forum_thread')."` t";
-		$joinmethod = empty($tids) ? 'INNER' : 'LEFT';
-		if($style['getpic'] || $picrequired) {
-			$sqlfrom .= " $joinmethod JOIN `".DB::table('forum_threadimage')."` ti ON t.tid=ti.tid AND ti.tid>0";
+		if($picrequired) {
+			$joinmethodpic = 'INNER';
+		} else if($style['getpic']) {
+			$joinmethodpic = 'LEFT';
+		}
+		if($joinmethodpic) {
+			$sqlfrom .= " $joinmethodpic JOIN `".DB::table('forum_threadimage')."` ti ON t.tid=ti.tid AND ti.tid>0";
 			$sqlfield = ', ti.attachment as attachmenturl, ti.remote';
 		}
 		if(empty($fids)) {
@@ -305,6 +326,7 @@ class block_groupthread {
 		}
 
 		$query = DB::query("SELECT t.* $sqlfield
+			FROM `".DB::table('forum_thread')."` t
 			$sqlfrom WHERE t.readperm='0'
 			$sql
 			AND t.displayorder>='0'

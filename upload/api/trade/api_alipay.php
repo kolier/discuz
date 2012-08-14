@@ -4,7 +4,7 @@
  *      [Discuz!] (C)2001-2099 Comsenz Inc.
  *      This is NOT a freeware, use is subject to license terms
  *
- *      $Id: api_alipay.php 22425 2011-05-06 10:36:52Z zhengqingpeng $
+ *      $Id: api_alipay.php 30091 2012-05-10 03:26:33Z zhengqingpeng $
  */
 
 define('IN_API', true);
@@ -42,6 +42,7 @@ function credit_payurl($price, &$orderid) {
 		'price' 		=> $price,
 		'quantity' 		=> 1,
 		'seller_email' 		=> $_G['setting']['ec_account'],
+		'extend_param'	=> 'isv^dz11'
 	);
 	if(DISCUZ_DIRECTPAY) {
 		$args['service'] = 'create_direct_pay_by_user';
@@ -73,6 +74,7 @@ function invite_payurl($amount, $price, &$orderid) {
 		'price' 		=> $price,
 		'quantity' 		=> 1,
 		'seller_email' 		=> $_G['setting']['ec_account'],
+		'extend_param'	=> 'isv^dz11'
 	);
 	if(DISCUZ_DIRECTPAY) {
 		$args['service'] = 'create_direct_pay_by_user';
@@ -106,6 +108,7 @@ function trade_payurl($pay, $trade, $tradelog) {
 		'logistics_payment' 	=> $pay['transport'],
 		'payment_type' 		=> $trade['itemtype'],
 		'seller_email' 		=> $trade['account'],
+		'extend_param'	=> 'isv^dz11'
 	);
 
 	if($pay['logistics_type'] == 'VIRTUAL') {
@@ -154,14 +157,15 @@ function trade_notifycheck($type) {
 	if($type == 'trade') {
 		$urlstr = '';
 		foreach($notify as $key => $val) {
-			MAGIC_QUOTES_GPC && $val = stripslashes($val);
-			$urlstr .= $key.'='.rawurlencode(stripslashes($val)).'&';
+			$urlstr .= $key.'='.rawurlencode($val).'&';
 		}
 	} else {
+		if(!DISCUZ_SECURITYCODE) {
+			exit('Access Denied');
+		}
 		ksort($notify);
 		$sign = '';
 		foreach($notify as $key => $val) {
-			$val = stripslashes($val);
 			if($key != 'sign' && $key != 'sign_type') $sign .= "&$key=$val";
 		}
 		if($notify['sign'] != md5(substr($sign,1).DISCUZ_SECURITYCODE)) {
@@ -205,7 +209,7 @@ function trade_typestatus($method, $status = -1) {
 		case 'unstarttrades'	: $methodvalue = array(0);break;
 		case 'eccredittrades'	: $methodvalue = array(7, 17);break;
 	}
-	return $status != -1 ? in_array($status, $methodvalue) : implode('\',\'', $methodvalue);
+	return $status != -1 ? in_array($status, $methodvalue) : $methodvalue;
 }
 
 function trade_getstatus($key, $method = 2) {

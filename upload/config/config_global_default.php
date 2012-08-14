@@ -4,7 +4,7 @@
  *      [Discuz!] (C)2001-2099 Comsenz Inc.
  *      This is NOT a freeware, use is subject to license terms
  *
- *      $Id: config_global_default.php 23921 2011-08-16 09:18:28Z cnteacher $
+ *      $Id: config_global_default.php 29404 2012-04-11 02:21:21Z cnteacher $
  */
 
 $_config = array();
@@ -27,13 +27,13 @@ $_config = array();
  * ...
  *
  */
-$_config['db'][1]['dbhost']  		= 'localhost';		
-$_config['db'][1]['dbuser']  		= 'root';		
-$_config['db'][1]['dbpw'] 	 	= 'root';		
-$_config['db'][1]['dbcharset'] 		= 'utf8';		
-$_config['db'][1]['pconnect'] 		= 0;			
-$_config['db'][1]['dbname']  		= 'ultrax';		
-$_config['db'][1]['tablepre'] 		= 'pre_';		
+$_config['db'][1]['dbhost']  		= 'localhost';
+$_config['db'][1]['dbuser']  		= 'root';
+$_config['db'][1]['dbpw'] 	 	= 'root';
+$_config['db'][1]['dbcharset'] 		= 'utf8';
+$_config['db'][1]['pconnect'] 		= 0;
+$_config['db'][1]['dbname']  		= 'ultrax';
+$_config['db'][1]['tablepre'] 		= 'pre_';
 
 /**
  * 数据库从服务器设置( slave, 只读 ), 支持多组服务器设置, 当设置多组服务器时, 系统每次随机使用
@@ -48,7 +48,7 @@ $_config['db'][1]['tablepre'] 		= 'pre_';
  *
  * $_config['db']['slave']['2']['dbhost'] = 'localhost';
  * ...
- * 
+ *
  */
 $_config['db']['slave'] = array();
 
@@ -87,28 +87,43 @@ $_config['db']['common']['slave_except_table'] = '';
 //内存变量前缀, 可更改,避免同服务器中的程序引用错乱
 $_config['memory']['prefix'] = 'discuz_';
 
-$_config['memory']['eaccelerator'] = 1;					// 启动对 eaccelerator 的支持
-$_config['memory']['apc'] = 1;							// 启动对 apc 的支持
-$_config['memory']['xcache'] = 1;						// 启动对 xcache 的支持
+/* reids设置, 需要PHP扩展组件支持, timeout参数的作用没有查证 */
+$_config['memory']['redis']['server'] = '';
+$_config['memory']['redis']['port'] = 6379;
+$_config['memory']['redis']['pconnect'] = 1;
+$_config['memory']['redis']['timeout'] = 0;
+/**
+ * 是否使用 Redis::SERIALIZER_IGBINARY选项,需要igbinary支持,windows下测试时请关闭，否则会出>现错误Reading from client: Connection reset by peer
+ * 支持以下选项，默认使用PHP的serializer
+ * [重要] 该选项已经取代原来的 $_config['memory']['redis']['igbinary'] 选项
+ * Redis::SERIALIZER_IGBINARY =2
+ * Redis::SERIALIZER_PHP =1
+ * Redis::SERIALIZER_NONE =0 //则不使用serialize,即无法保存array
+ */
+$_config['memory']['redis']['serializer'] = 1;
+
 $_config['memory']['memcache']['server'] = '';			// memcache 服务器地址
 $_config['memory']['memcache']['port'] = 11211;			// memcache 服务器端口
 $_config['memory']['memcache']['pconnect'] = 1;			// memcache 是否长久连接
 $_config['memory']['memcache']['timeout'] = 1;			// memcache 服务器连接超时
 
+$_config['memory']['apc'] = 1;							// 启动对 apc 的支持
+$_config['memory']['xcache'] = 1;						// 启动对 xcache 的支持
+$_config['memory']['eaccelerator'] = 1;					// 启动对 eaccelerator 的支持
 // 服务器相关设置
 $_config['server']['id']		= 1;			// 服务器编号，多webserver的时候，用于标识当前服务器的ID
 
 // 附件下载相关
-// 
+//
 // 本地文件读取模式; 模式2为最节省内存方式，但不支持多线程下载
 // 1=fread 2=readfile 3=fpassthru 4=fpassthru+multiple
-$_config['download']['readmod'] = 2;				
+$_config['download']['readmod'] = 2;
 
 // 是否启用 X-Sendfile 功能（需要服务器支持）0=close 1=nginx 2=lighttpd 3=apache
 $_config['download']['xsendfile']['type'] = 0;
 
 // 启用 nginx X-sendfile 时，论坛附件目录的虚拟映射路径，请使用 / 结尾
-$_config['download']['xsendfile']['dir'] = '/down/';		
+$_config['download']['xsendfile']['dir'] = '/down/';
 
 //  CONFIG CACHE
 $_config['cache']['type'] 			= 'sql';	// 缓存类型 file=文件缓存, sql=数据库缓存
@@ -124,7 +139,7 @@ $_config['output']['ajaxvalidate']		= 0;		// 是否严格验证 Ajax 页面的�
 $_config['output']['iecompatible']		= 0;		// 页面 IE 兼容模式
 
 // COOKIE 设置
-$_config['cookie']['cookiepre'] 		= 'uchome_'; 	// COOKIE前缀
+$_config['cookie']['cookiepre'] 		= 'discuz_'; 	// COOKIE前缀
 $_config['cookie']['cookiedomain'] 		= ''; 		// COOKIE作用域
 $_config['cookie']['cookiepath'] 		= '/'; 		// COOKIE作用路径
 
@@ -144,7 +159,7 @@ $_config['admincp']['founder']			= '1';		// 站点创始人：拥有站点管理
 								// 可以使用uid，也可以使用用户名；多个创始人之间请使用逗号“,”分开;
 $_config['admincp']['forcesecques']		= 0;		// 管理人员必须设置安全提问才能进入系统设置 0=否, 1=是[安全]
 $_config['admincp']['checkip']			= 1;		// 后台管理操作是否验证管理员的 IP, 1=是[安全], 0=否。仅在管理员无法登陆后台时设置 0。
-$_config['admincp']['runquery']			= 1;		// 是否允许后台运行 SQL 语句 1=是 0=否[安全]
+$_config['admincp']['runquery']			= 0;		// 是否允许后台运行 SQL 语句 1=是 0=否[安全]
 $_config['admincp']['dbimport']			= 1;		// 是否允许后台恢复论坛数据  1=是 0=否[安全]
 
 /**
@@ -163,5 +178,8 @@ $_config['remote']['appkey'] = md5($_config['security']['authkey']);
 
 // 远程调用: 开启外部 cron 任务. 系统内部不再执行cron, cron任务由外部程序激活
 $_config['remote']['cron'] = 0;
+
+// $_GET|$_POST的兼容处理，0为关闭，1为开启；开启后即可使用$_G['gp_xx'](xx为变量名，$_GET和$_POST集合的所有变量名)，值为已经addslashes()处理过
+$_config['input']['compatible'] = 1;
 
 ?>
